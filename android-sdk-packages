@@ -13,3 +13,6 @@ echo "platforms;android-37.0"
 echo "build-tools;36.0.0"
 echo "platforms;android-$compile_sdk"
 echo "ndk;$ndk_version"
+# Plugins still compile against 35, and their native builds need CMake
+echo "platforms;android-35"
+echo "cmake;3.22.1"
