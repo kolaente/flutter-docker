@@ -1,0 +1,15 @@
+#!/bin/sh
+# SDK packages the image installs, shared by the Dockerfile and the smoke test
+set -eu
+
+flutter_extension="$FLUTTER_HOME/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt"
+ndk_version=$(sed -n 's/.*val ndkVersion: String = "\(.*\)"/\1/p' "$flutter_extension")
+compile_sdk=$(sed -n 's/.*val compileSdkVersion: Int = \([0-9]*\).*/\1/p' "$flutter_extension")
+test -n "$ndk_version" -a -n "$compile_sdk"
+
+echo platform-tools
+# compileSdk 37 isn't Flutter's default yet, AGP 9.1 wants build-tools 36.0.0
+echo "platforms;android-37.0"
+echo "build-tools;36.0.0"
+echo "platforms;android-$compile_sdk"
+echo "ndk;$ndk_version"

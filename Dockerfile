@@ -2,8 +2,6 @@ FROM debian:trixie-slim
 
 ARG FLUTTER_VERSION
 ARG ANDROID_CMDLINE_TOOLS_VERSION=13114758
-# compileSdk 37 isn't Flutter's default yet, AGP 9.1 wants build-tools 36.0.0
-ARG ANDROID_PACKAGES="platform-tools platforms;android-37.0 build-tools;36.0.0"
 
 ENV FLUTTER_HOME=/opt/flutter \
     ANDROID_HOME=/opt/android-sdk \
@@ -33,16 +31,14 @@ RUN test -n "$FLUTTER_VERSION" \
     && flutter config --no-cli-animations \
     && flutter precache --android
 
-# The NDK and default compileSdk follow whatever the pinned Flutter version expects
+COPY android-sdk-packages /usr/local/bin/
+
 RUN curl -fsSLo /tmp/cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" \
     && mkdir -p "$ANDROID_HOME/cmdline-tools" \
     && unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools" \
     && mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest" \
     && rm /tmp/cmdline-tools.zip \
     && yes | sdkmanager --licenses > /dev/null \
-    && flutter_extension="$FLUTTER_HOME/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt" \
-    && ndk_version=$(sed -n 's/.*val ndkVersion: String = "\(.*\)"/\1/p' "$flutter_extension") \
-    && compile_sdk=$(sed -n 's/.*val compileSdkVersion: Int = \([0-9]*\).*/\1/p' "$flutter_extension") \
-    && test -n "$ndk_version" -a -n "$compile_sdk" \
-    && sdkmanager --install $ANDROID_PACKAGES "platforms;android-$compile_sdk" "ndk;$ndk_version" > /dev/null \
+    && packages=$(android-sdk-packages) \
+    && sdkmanager --install $packages > /dev/null \
     && sdkmanager --list_installed
