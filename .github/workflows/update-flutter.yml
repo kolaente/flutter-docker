@@ -1,0 +1,59 @@
+name: Update Flutter
+
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      ref: ${{ steps.commit.outputs.ref }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Get latest stable version
+        id: latest
+        run: |
+          version=$(curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json \
+            | jq -r '.current_release.stable as $hash | [.releases[] | select(.hash == $hash and .channel == "stable")][0].version')
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Unexpected version '$version'"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        id: commit
+        env:
+          LATEST: ${{ steps.latest.outputs.version }}
+        run: |
+          current=$(cat FLUTTER_VERSION)
+          if [ "$current" = "$LATEST" ]; then
+            echo "Flutter $current is already the latest stable"
+            exit 0
+          fi
+
+          echo "$LATEST" > FLUTTER_VERSION
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: update flutter to $LATEST"
+          git push origin HEAD:main
+          echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # Pushes made with GITHUB_TOKEN don't trigger build.yml, so publish from this run
+  build:
+    needs: update
+    if: needs.update.outputs.ref != ''
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.update.outputs.ref }}
