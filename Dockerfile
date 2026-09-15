@@ -1,14 +1,10 @@
-FROM debian:trixie-slim
+FROM debian:trixie-slim AS slim
 
 ARG FLUTTER_VERSION
-ARG ANDROID_CMDLINE_TOOLS_VERSION=13114758
 
 ENV FLUTTER_HOME=/opt/flutter \
-    ANDROID_HOME=/opt/android-sdk \
-    JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
-    PUB_CACHE=/root/.pub-cache \
-    GRADLE_USER_HOME=/root/.gradle
-ENV PATH=$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+    PUB_CACHE=/root/.pub-cache
+ENV PATH=$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -16,7 +12,6 @@ RUN apt-get update \
         curl \
         file \
         git \
-        openjdk-21-jdk-headless \
         unzip \
         xz-utils \
         zip \
@@ -29,7 +24,22 @@ RUN test -n "$FLUTTER_VERSION" \
     && flutter --disable-analytics \
     && dart --disable-analytics \
     && flutter config --no-cli-animations \
-    && flutter precache --android
+    && flutter precache --universal
+
+FROM slim AS android
+
+ARG ANDROID_CMDLINE_TOOLS_VERSION=13114758
+
+ENV ANDROID_HOME=/opt/android-sdk \
+    JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
+    GRADLE_USER_HOME=/root/.gradle
+ENV PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openjdk-21-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN flutter precache --android
 
 COPY android-sdk-packages /usr/local/bin/
 
