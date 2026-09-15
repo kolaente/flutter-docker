@@ -58,4 +58,4 @@ build-android:
 
 - A daily workflow checks Flutter's release feed. When there is a new stable version, it bumps `FLUTTER_VERSION`, commits to `main` and builds and publishes the image in the same run.
 - The image is rebuilt weekly to pick up base image and security updates, and on every push to `main` that touches the image.
-- Every build runs `flutter doctor` and builds a fresh debug and release APK inside the image before anything is pushed, so a broken image is never published.
+- Every build checks the toolchain inside the image (`flutter doctor`, Java, installed SDK packages) before anything is pushed, so a broken image is never published.

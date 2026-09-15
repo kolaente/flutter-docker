@@ -6,6 +6,7 @@ on:
     paths: &image-paths
       - Dockerfile
       - FLUTTER_VERSION
+      - android-sdk-packages
       - smoke-test.sh
       - .github/workflows/**
   pull_request:
@@ -45,7 +46,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      # The loaded image, BuildKit's copy of it and the smoke test's Gradle downloads outgrow the runner disk
+      # The loaded image plus BuildKit's copy of it outgrow the runner disk
       - name: Free disk space
         run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
 
