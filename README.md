@@ -1,25 +1,33 @@
 # Flutter Docker Image
 
-A Flutter + Android SDK image for building Android apps in CI, so jobs don't have to install Flutter, the SDK and a JDK on every run.
+Flutter images for CI, so jobs don't have to install Flutter, the Android SDK and a JDK on every run.
 
 Images are published only on GitHub Container Registry (GHCR) as `ghcr.io/kolaente/flutter-docker`, for `linux/amd64`.
 
-## What's in the image
+## Variants
+
+**Slim** - for jobs that only need Dart and Flutter (`dart format`, `dart analyze`, `build_runner`, `flutter test`):
 
 - Debian trixie (slim)
-- Flutter stable, cloned from its git tag, with Android artifacts precached and analytics disabled
+- Flutter stable, cloned from its git tag, with the platform independent artifacts precached and analytics disabled
+
+**Android** - everything in slim, plus what's needed to build Android apps:
+
 - OpenJDK 21
+- Flutter's Android artifacts
 - Android SDK: `platform-tools`, `platforms;android-37.0`, `build-tools;36.0.0`, plus the default `compileSdk` platform and NDK of the bundled Flutter version. Licenses are accepted.
 
-Environment: `FLUTTER_HOME=/opt/flutter`, `ANDROID_HOME=/opt/android-sdk`, `JAVA_HOME`, `PUB_CACHE=/root/.pub-cache`, `GRADLE_USER_HOME=/root/.gradle`. Flutter, Dart and the SDK tools are on `PATH`.
+Environment: `FLUTTER_HOME=/opt/flutter` and `PUB_CACHE=/root/.pub-cache`, plus `ANDROID_HOME=/opt/android-sdk`, `JAVA_HOME` and `GRADLE_USER_HOME=/root/.gradle` in the Android variant. Flutter, Dart and the SDK tools are on `PATH`.
 
 ## Tags
 
-- `3.47.4` - the Flutter version (see [`FLUTTER_VERSION`](FLUTTER_VERSION))
-- `latest` - the most recent build of `main`
-- `sha-<commit>` - the build of a specific commit of this repo
+| Android | Slim | |
+|---|---|---|
+| `3.47.4` | `3.47.4-slim` | the Flutter version (see [`FLUTTER_VERSION`](FLUTTER_VERSION)) |
+| `latest` | `slim` | the most recent build of `main` |
+| `sha-<commit>` | `sha-<commit>-slim` | the build of a specific commit of this repo |
 
-Pull requests build and test the image but never publish it.
+The Android image is built on top of the slim one, so pulling both only downloads the shared layers once. Pull requests build and test the images but never publish them.
 
 ## Verifying the signature
 
@@ -36,6 +44,19 @@ cosign verify ghcr.io/kolaente/flutter-docker:3.47.4 \
 Point `PUB_CACHE` and `GRADLE_USER_HOME` into the project dir so GitLab can cache them:
 
 ```yaml
+test:
+  image: ghcr.io/kolaente/flutter-docker:3.47.4-slim
+  variables:
+    PUB_CACHE: "$CI_PROJECT_DIR/.cache/pub"
+  cache:
+    key: pub
+    paths:
+      - .cache/pub
+  script:
+    - flutter pub get
+    - dart analyze
+    - flutter test
+
 build-android:
   image: ghcr.io/kolaente/flutter-docker:3.47.4
   variables:
@@ -56,6 +77,6 @@ build-android:
 
 ## How updates work
 
-- A daily workflow checks Flutter's release feed. When there is a new stable version, it bumps `FLUTTER_VERSION`, commits to `main` and builds and publishes the image in the same run.
-- The image is rebuilt weekly to pick up base image and security updates, and on every push to `main` that touches the image.
-- Every build checks the toolchain inside the image (`flutter doctor`, Java, installed SDK packages) before anything is pushed, so a broken image is never published.
+- A daily workflow checks Flutter's release feed. When there is a new stable version, it bumps `FLUTTER_VERSION`, commits to `main` and builds and publishes both images in the same run.
+- The images are rebuilt weekly to pick up base image and security updates, and on every push to `main` that touches them.
+- Every build checks the toolchain inside each image (`flutter doctor`, and for Android also Java and the installed SDK packages) before anything is pushed, so a broken image is never published.
