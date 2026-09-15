@@ -16,8 +16,20 @@ Environment: `FLUTTER_HOME=/opt/flutter`, `ANDROID_HOME=/opt/android-sdk`, `JAVA
 ## Tags
 
 - `3.47.4` - the Flutter version (see [`FLUTTER_VERSION`](FLUTTER_VERSION))
-- `latest` - the most recent build
+- `latest` - the most recent build of `main`
 - `sha-<commit>` - the build of a specific commit of this repo
+
+Pull requests build and test the image but never publish it.
+
+## Verifying the signature
+
+Images are signed keylessly with [cosign](https://github.com/sigstore/cosign) from this repo's build workflow:
+
+```shell
+cosign verify ghcr.io/kolaente/flutter-docker:3.47.4 \
+  --certificate-identity https://github.com/kolaente/flutter-docker/.github/workflows/build.yml@refs/heads/main \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
 
 ## Using this image in GitLab CI
 
