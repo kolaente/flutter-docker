@@ -2,7 +2,7 @@
 
 A Flutter + Android SDK image for building Android apps in CI, so jobs don't have to install Flutter, the SDK and a JDK on every run.
 
-Images are published only on GitHub Container Registry (GHCR) as `ghcr.io/kolaente/flutter`, for `linux/amd64`.
+Images are published only on GitHub Container Registry (GHCR) as `ghcr.io/kolaente/flutter-docker`, for `linux/amd64`.
 
 ## What's in the image
 
@@ -25,7 +25,7 @@ Point `PUB_CACHE` and `GRADLE_USER_HOME` into the project dir so GitLab can cach
 
 ```yaml
 build-android:
-  image: ghcr.io/kolaente/flutter:3.47.4
+  image: ghcr.io/kolaente/flutter-docker:3.47.4
   variables:
     PUB_CACHE: "$CI_PROJECT_DIR/.cache/pub"
     GRADLE_USER_HOME: "$CI_PROJECT_DIR/.cache/gradle"
